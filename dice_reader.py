@@ -12,7 +12,7 @@ pytesseract.pytesseract.tesseract_cmd = r'D:/Program Files/TesseractOCR/tesserac
 imgName = str(round(time.time()))
 startTime = time.time()
 
-inputImg = './Images/unprocessed/tray69420.jpg'
+inputImg = './Images/unprocessed/new.jpg'
 
 # Debugging info
 red = (0,0,255)
@@ -40,7 +40,7 @@ class Tray:
 		self.trayBounds = self.contour_rect() 	#boundaries of the tray. I call self.image[1] and am called to define self.image[2], DON'T MOVE ME
 		self.image[2] = self.rotate_crop_tray()
 		self.image[3], self.image[4] = self.process_tray_image_binary()
-		#image types 5 and 6 are defined in method self.gey_im5() and self.get_im6() respectively
+		#image types 5 and 6 are defined in method self.get_im5() and self.get_im6() respectively
 		self.imageType = [						#The order of self.image() is kept here
 			"Original",			#0
 			"Grey Uncropped",	#1
@@ -111,8 +111,6 @@ class Tray:
 
 		class d100:
 			pass
-
-
 
 	###__________Dice init and Attributes__________###
 		def __init__(self, greyImage, center): #center references where the center of the image is in the TRAY, not in the image of the die
@@ -456,7 +454,7 @@ class Tray:
 		if imtype >= 0:
 			cv.imwrite("./Images/processed/" + self.name + "_" + self.imageType[imtype] + ".jpg", self.image[imtype])
 
-i=9
+i=0
 
 tray = Tray(inputImg)
 die = tray.dice[i].images[3].image
@@ -464,7 +462,7 @@ ref_square = tray.Dice.d6().reference
 
 ret = cv.matchShapes(die,ref_square,1,0.0)
 
-tray.dice[i].show(3)
+#tray.dice[i].show()
 print(ret)
 print(ret < 0.001)
 
