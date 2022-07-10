@@ -58,9 +58,12 @@ class DiceConnector:
 		self.wrk_img = 0
 
 		self.Webcam = VideoCapture()
+		# self.Webcam.display()
+		display_window = Thread(target=self.Webcam.display())
 
-		display_window = Thread(target=self.Webcam.display)
-		display_window.start()
+
+
+		# display_window.start()
 
 		while True:
 			try:
@@ -72,7 +75,6 @@ class DiceConnector:
 				break
 			# print('\n'*30 + "waiting for image capture...")
 
-		print("Passed")
 		self.diceFindSize = (6000, 30000)
 		self.diceOverlapSearchRadius = 5
 		self.diceList = self.image_processor(True)		#coords of die bounding boxes, in form ([coords], center). Pass 'True' to print.
@@ -82,7 +84,7 @@ class DiceConnector:
 		self.display()
 		# d
 		# dice_processor.start()
-		display_window.join()
+		# display_window.join()
 
 
 	def crop_dice(self):
@@ -115,13 +117,12 @@ class DiceConnector:
 		_, image_copy = cv2.threshold(image_copy, self.threshold_a, 255, cv2.THRESH_BINARY)
 		cv2.imshow('Threshold Test(a)', image_copy)
 
-
 	def image_processor(self, keep=True):
 
 		#Process image to a Binary Threshold
 		raw_img = self.Webcam.img
 		self.wrk_img = cv2.cvtColor(raw_img, cv2.COLOR_BGR2GRAY)
-		self.wrk_img = cv2.GaussianBlur(self.wrk_img, (5,5), 1)
+		self.wrk_img = cv2.GaussianBlur(self.wrk_img, (5,5), 2)
 
 		
 		cv2.imshow('Threshold Test(a)', self.wrk_img)
@@ -129,10 +130,10 @@ class DiceConnector:
 		cv2.waitKey(0)
 
 
-		# _, self.wrk_img = cv2.threshold(self.wrk_img, self.threshold_a, 255, cv2.THRESH_BINARY)
-		# canny_img = cv2.Canny(self.wrk_img, 1, 50, 2)
+		_, self.wrk_img = cv2.threshold(self.wrk_img, self.threshold_a, 255, cv2.THRESH_BINARY)
+		canny_img = cv2.Canny(self.wrk_img, 1, 50, 2)
 
-		# cv2.imshow("canny_img", canny_img)
+		cv2.imshow("canny_img", canny_img)
 		contours, _ = cv2.findContours(canny_img, 1, 2)
 
 
@@ -202,7 +203,6 @@ class DiceConnector:
 				cv2.drawContours(drawing, [box], 0, cyan)
 		if keep:	
 			cv2.imshow("drawing", drawing)
-			cv2.waitKey()
 		return(boxKeep)
 
 	def display(self):
@@ -212,8 +212,9 @@ class DiceConnector:
 
 
 		for i, d in enumerate(self.dice):
-			cv2.imshow("Die "+ str(i), d)
-			cv2.moveWindow("Die "+ str(i), -1000,0)
+			pass
+			# cv2.imshow("Die "+ str(i), d)
+			# cv2.moveWindow("Die "+ str(i), -1000,0)
 		cv2.waitKey()
 
 
@@ -232,7 +233,9 @@ class VideoCapture:
 			self.frameWidth = 640
 			self.frameHeight = 480
 			self.centerPoint = (self.frameWidth/2, self.frameHeight/2)
-			self.capture = cv2.VideoCapture(0)
+			self.capture = cv2.VideoCapture(1
+
+				)
 			self.capture.set(3, self.frameWidth)
 			self.capture.set(4, self.frameHeight)
 			self.img = 0 #Defined in the "display" method every frame
@@ -240,15 +243,15 @@ class VideoCapture:
 
 
 		def display(self):
-			print("Display loading...")
+			print("Display loading... (press s to save image, q to progress)")
 			frame = 0
 			while True:
 				frame += 1
 				_, img = self.capture.read()
 				if cv2.waitKey(1) & 0xFF == ord('q'):
 					break
-				# if cv2.waitKey(1) & 0xFF == ord('s'):
-				if frame == 10:
+				if cv2.waitKey(1) & 0xFF == ord('s'):
+				# if frame == 10:
 					self.img = img
 					print("Image saved")
 					pass
