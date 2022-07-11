@@ -57,13 +57,6 @@ class DiceConnector:
 		self.threshold_a = 100
 		self.wrk_img = 0
 
-		self.Webcam = VideoCapture()
-		# self.Webcam.display()
-		display_window = Thread(target=self.Webcam.display())
-
-
-
-		# display_window.start()
 
 		while True:
 			try:
@@ -233,9 +226,7 @@ class VideoCapture:
 			self.frameWidth = 640
 			self.frameHeight = 480
 			self.centerPoint = (self.frameWidth/2, self.frameHeight/2)
-			self.capture = cv2.VideoCapture(1
-
-				)
+			self.capture = cv2.VideoCapture(1)
 			self.capture.set(3, self.frameWidth)
 			self.capture.set(4, self.frameHeight)
 			self.img = 0 #Defined in the "display" method every frame
@@ -267,7 +258,10 @@ class VideoCapture:
 
 
 
-		
+
+Webcam = VideoCapture()
+display_window = Thread(target=Webcam.display())
+display_window.start()
 
 
 dice_connection = DiceConnector()
