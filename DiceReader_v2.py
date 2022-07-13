@@ -51,45 +51,59 @@ cyan = (255,255,0)
 yellow = (0,255,255)
 white = (255,255,255)
 
+
+
+def DC_Thread(capture_object, setup):
+	Connection = DiceConnector(capture_object)
+	if setup:
+		Connection.setup()
+		return()
+	ConThread = Thread(target=Connection.mainLoop())
+	ConThread.start()
+	# Webcam.display()
+
 class DiceConnector:
 
-	def __init__(self):
+	def __init__(self, Capture, ThreshTest=False):
 		self.threshold_a = 100
 		self.wrk_img = 0
-
-
-		while True:
-			try:
-				if self.Webcam.img == 0:
-					time.sleep(1)
-					pass
-			except ValueError:
-				# print("image taken")
-				break
-			# print('\n'*30 + "waiting for image capture...")
+		self.Capture = Capture
+		self.ThreshTest = ThreshTest
+		self.defaultThresh = 220
 
 		self.diceFindSize = (6000, 30000)
-		self.diceOverlapSearchRadius = 5
-		self.diceList = self.image_processor(True)		#coords of die bounding boxes, in form ([coords], center). Pass 'True' to print.
-		self.dice = self.crop_dice()				#dice as Dice objects
+		self.diceOverlapSearchRadius = 10
 
 
+		#Reference image, set by setup.
+		self.blank_arena = cv2.imread("./Images/references/blank_arena.jpg")
+
+
+
+	def setup(self):
+		#Captures empty area
+		print("Ensure area is empty and lighting is correct, then press any key to continue.")
+		cv2.waitKey()
+		_, img = self.Capture.capture.read()
+		cv2.imwrite("./Images/references/blank_arena.jpg", img)
+		print("Image saved as blank reference. Resuming...")
+
+
+	def mainLoop(self):
+		self.diceList = self.image_processor()		#coords of die bounding boxes, in form ([coords], center). Pass 'True' to print.
+		self.dice = self.find_dice()				#dice as Dice objects
 		self.display()
-		# d
-		# dice_processor.start()
-		# display_window.join()
 
-
-	def crop_dice(self):
+	def find_dice(self):
 		croppedDice = []
-		ogImgCenter = self.Webcam.centerPoint
+		ogImgCenter = self.Capture.centerPoint
 		allDice = []
 
 		for i, (coords, center) in enumerate(self.diceList):
 			dieRotRatio = (coords[1][0]-coords[0][0])/(coords[1][1]-coords[0][1]+0.000001)
 			dieRotRad = math.atan(dieRotRatio)
 			dieRotDeg = math.degrees(dieRotRad)
-			die = imutils.rotate_bound(self.Webcam.img, dieRotDeg)
+			die = imutils.rotate_bound(self.Capture.img, dieRotDeg)
 			newImgCenter = [(len(die)/2), ((len(die[0])/2))]
 			
 			newCorners = []
@@ -110,28 +124,27 @@ class DiceConnector:
 		_, image_copy = cv2.threshold(image_copy, self.threshold_a, 255, cv2.THRESH_BINARY)
 		cv2.imshow('Threshold Test(a)', image_copy)
 
-	def image_processor(self, keep=True):
+	def image_processor(self, keep=False):
 
 		#Process image to a Binary Threshold
-		raw_img = self.Webcam.img
+		raw_img = self.Capture.img
 		self.wrk_img = cv2.cvtColor(raw_img, cv2.COLOR_BGR2GRAY)
-		self.wrk_img = cv2.GaussianBlur(self.wrk_img, (5,5), 2)
+		self.wrk_img = cv2.GaussianBlur(self.wrk_img, (11,11), 1000)
 
 		
-		cv2.imshow('Threshold Test(a)', self.wrk_img)
-		a = cv2.createTrackbar("Thres a", "Threshold Test(a)", 0, 255, self.on_change)
-		cv2.waitKey(0)
+		if self.ThreshTest:
+			cv2.imshow('Threshold Test(a)', self.wrk_img)
+			a = cv2.createTrackbar("Thres a", "Threshold Test(a)", 0, 255, self.on_change)
+			cv2.waitKey(0)
+		else:
+			self.threshold_a = self.defaultThresh
 
 
 		_, self.wrk_img = cv2.threshold(self.wrk_img, self.threshold_a, 255, cv2.THRESH_BINARY)
 		canny_img = cv2.Canny(self.wrk_img, 1, 50, 2)
 
-		cv2.imshow("canny_img", canny_img)
+		# cv2.imshow("canny_img", canny_img)
 		contours, _ = cv2.findContours(canny_img, 1, 2)
-
-
-
-
 
 
 		#minimum area rotated rectangle for each contour
@@ -200,25 +213,21 @@ class DiceConnector:
 
 	def display(self):
 		for die, center in (self.diceList):
-			cv2.drawContours(self.Webcam.img, [die], -1, green, 3)
-		cv2.imshow("Boxed Dice", self.Webcam.img)
+			cv2.drawContours(self.Capture.img, [die], -1, green, 3)
+		cv2.imshow("Boxed Dice", self.Capture.img)
 
 
 		for i, d in enumerate(self.dice):
+			# print(d)
 			pass
-			# cv2.imshow("Die "+ str(i), d)
+			# cv2.imshow("Die "+str(i), d)
 			# cv2.moveWindow("Die "+ str(i), -1000,0)
-		cv2.waitKey()
-
-
+		# cv2.waitKey()
 
 class Dice:
 	def __init__(self, raw_img, center):
 		self.center = center
 		self.img = raw_img
-		
-
-
 
 class VideoCapture:
 
@@ -239,19 +248,17 @@ class VideoCapture:
 			while True:
 				frame += 1
 				_, img = self.capture.read()
+				self.img = img
 				if cv2.waitKey(1) & 0xFF == ord('q'):
 					break
 				if cv2.waitKey(1) & 0xFF == ord('s'):
-				# if frame == 10:
-					self.img = img
-					print("Image saved")
+					print("Initializing setup...")
+					DC_Thread(self, setup = True)
 					pass
-				cv2.imshow("Original", img)
 
-
-		#These 2 lines are a bypass to jump directly to processing the first frame the camera pulls
-				# self.img = img
-				# break
+		#This is a bypass to jump directly to processing the first frame the camera pulls
+				DC_Thread(self, setup = False)
+				# cv2.imshow("Live Feed", img)
 
 			self.capture.release()
 			cv2.destroyAllWindows()
@@ -262,9 +269,12 @@ class VideoCapture:
 Webcam = VideoCapture()
 display_window = Thread(target=Webcam.display())
 display_window.start()
+# Webcam.display()
 
 
-# dice_connection = DiceConnector()
 
+dice_connection = DiceConnector(Webcam)
 
+# display_window.join()
 cv2.waitKey(0)
+cv2.destroyAllWindows()
