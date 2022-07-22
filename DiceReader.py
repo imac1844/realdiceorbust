@@ -25,7 +25,8 @@ CYAN = (255,255,0)
 YELLOW = (0,255,255)
 WHITE = (255,255,255)
 
-class Wrapper():
+
+class DC:
 	def __init__(self):
 		self.Webcam = VideoCapture()
 		self.videoThread = Thread(target = self.Webcam.display)
@@ -34,7 +35,7 @@ class Wrapper():
 	def buttons(self):
 		self.videoThread.start()
 		self.interface_TK = tk.Tk()
-		self.interface_TK.title('Dice Connection')
+		self.interface_TK.title('Dice Connection Interface')
 		self.DiceButtonWindow = tk.Canvas(self.interface_TK, width=250, height=100, bd = 15, bg = 'cyan')
 		self.DiceButtonWindow.grid(columnspan=2, rowspan = 1)
 
@@ -43,8 +44,6 @@ class Wrapper():
 
 		self.button_read = tk.Button(width = 10, height = 2, text = 'Read', command = self.read_funct)
 		self.button_read.grid(row = 0, column = 1)
-
-
 
 		self.interface_TK.mainloop()
 		
@@ -57,52 +56,6 @@ class Wrapper():
 		except RuntimeError: pass
 		try: self.interface_TK.destroy()
 		except AttributeError: pass	
-
-	
-# 		self.displayThread.start()
-# 		self.interface_TK = tk.Tk()
-# 		self.inter.title(self.setname)
-
-# 		self.DiceButtonWindow = tk.Canvas(self.DiceChoice_TK, width=220, height=150, bd = 15, bg = 'cyan')
-# 		self.DiceButtonWindow.grid(columnspan=3, rowspan = 5)
-# 		self.spacer = tk.Canvas(width = 220, height = 5, bg = 'green', bd = 15)
-
-# 		self.spacer.grid(row = 3, column = 0, columnspan = 3)
-
-
-
-
-# 		self.button_d4 = tk.Button(width = 10, height = 2, text = 'd4', command = lambda: self.die_val_funct(4))
-# 		self.button_d4.grid(row = 0, column = 0)
-
-# 		self.button_d6 = tk.Button(width = 10, height = 2, text = 'd6', command = lambda: self.die_val_funct(6))
-# 		self.button_d6.grid(row = 0, column = 1)
-		
-# 		self.button_d8 = tk.Button(width = 10, height = 2, text = 'd8', command = lambda: self.die_val_funct(8))
-# 		self.button_d8.grid(row = 0,column = 2)
-
-# 		self.button_d10 = tk.Button(width = 10, height = 2, text = 'd10', command = lambda: self.die_val_funct(10))
-# 		self.button_d10.grid(row = 1, column = 0)
-
-# 		self.button_d100 = tk.Button(width = 10, height = 2, text = 'd100', command = lambda: self.die_val_funct(100))
-# 		self.button_d100.grid(row = 2, column = 0)
-
-# 		self.button_d12 = tk.Button(width = 10, height = 2, text = 'd12', command = lambda: self.die_val_funct(12))
-# 		self.button_d12.grid(row = 1, column = 1)
-		
-# 		self.button_d20 = tk.Button(width = 10, height = 2, text = 'd20', command = lambda: self.die_val_funct(20))
-# 		self.button_d20.grid(row = 1,column = 2)
-
-# 		self.button_quit = tk.Button(width = 10, height = 2, text = 'Done', command = self.quit_funct)
-# 		self.button_quit.grid(row = 2,column = 2)
-
-# 		self.DiceChoice_TK.mainloop()
-
-
-
-
-
-
 
 class DiceConnector:
 
@@ -119,10 +72,10 @@ class DiceConnector:
 
 		self.show = ShowSteps # Set True to show working images
 
+
 		self.diceList = self.image_processor()		#coords of die bounding boxes, in form ([coords], center). 
 		self.dice = self.list_dice()				#dice as Dice objects
 		self.display()
-
 
 	def list_dice(self):
 		croppedDice = []
@@ -259,7 +212,7 @@ class DiceConnector:
 	def display(self):
 		for die, center in (self.diceList):
 			cv2.drawContours(self.Capture.img, [die], -1, GREEN, 3)
-		cv2.imshow("0 - Live Feed", self.Capture.img)
+		cv2.imshow("DiceConnection Video Feed", self.Capture.img)
 		# cv2.moveWindow("0 - Live Feed", -1935,0)
 
 		if self.show:
@@ -278,7 +231,6 @@ class DiceConnector:
 	def feature_match(self):
 		for die in self.dice:
 			GrayImg = cv2.cvtColor(die.img, cv2.COLOR_BGR2GRAY)
-
 			orb = cv2.ORB_create()
 			bf = cv2.BFMatcher(cv2.NORM_HAMMING, crossCheck=True)
 			kp_target, des_target = orb.detectAndCompute(GrayImg,None)
@@ -288,8 +240,14 @@ class DiceConnector:
 	   			for name in files:
 	   				pathname = os.path.join(root, name)
 	   				ref_img = cv2.imread(pathname, cv2.COLOR_BGR2GRAY)
-	   				kp_ref, des_ref = orb.detectAndCompute(ref_img,None)
-	   				matches = bf.match(des_target,des_ref)
+	   				# cv2.imshow()
+	   				try:
+	   					kp_ref, des_ref = orb.detectAndCompute(ref_img,None)
+	   				except cv2.error:
+	   					continue
+
+	   				# print(type(des_target), "\n", type(des_ref))
+	   				matches = bf.match(des_target, des_ref)
 	   				matches = sorted(matches, key = lambda x:x.distance)
 
 	   				top5 = 0
@@ -302,7 +260,7 @@ class DiceConnector:
 
 
 			die.matchlist = sorted(die.matchlist, key = lambda x:x[1])
-			print(die.matchlist[0])
+			die.results()
 
 		# print(matches[0].distance)
 
@@ -314,6 +272,15 @@ class Dice:
 		self.frameHeight = len(self.img)
 		self.matchlist = []
 
+		self.value = None
+		self.type = None
+
+	def results(self):
+		raw_result = self.matchlist[0][0].split('\\')
+		self.value = raw_result[-1][:-4]
+		self.type = raw_result[-2]
+
+		print(self.type, "rolled", self.value )
 
 class VideoCapture:
 
@@ -351,6 +318,5 @@ class VideoCapture:
 			self.capture.release()
 			cv2.destroyAllWindows()
 
-
-Wrapper()
-
+if __name__ == '__main__':
+	DC()

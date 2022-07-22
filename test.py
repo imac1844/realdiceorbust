@@ -1,4 +1,10 @@
-import os
-for root, dirs, files in os.walk("./DiceSets/", topdown=True):
-   for name in files:
-      print(os.path.join(root, name))
+# import templateMaker as tm
+# import DiceReader as dr
+
+
+
+
+
+test = ('.\\DiceSets\\Black\\d6\\5.jpg', 86.0)
+
+print(test[0].split('\\'))

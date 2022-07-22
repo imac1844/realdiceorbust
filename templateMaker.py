@@ -1,14 +1,31 @@
+"""
+____________________________________________________________________________________________
+Dice Connection 
+- Template Maker v1.0
+
+This is a tool designed to capture reference photos of dice sets, to be used by DiceReader. 
+
+
+
+
+_____________________________________________________________________________________________
+"""
+
+
+
 import cv2
 import tkinter as tk
 from threading import Thread
 import os
+import sys
 
 
-
-class TemplateMaker:
-
+class TM:
+	""" Wrapper class, 
+	"""
 	def __init__(self):
-		self.frameWidth = 640
+		
+		self.frameWidth = 640      # 
 		self.frameHeight = 480
 		self.centerPoint = (int(self.frameWidth/2), int(self.frameHeight/2))
 		self.capture = cv2.VideoCapture(1)   							#change the value if it loads the wrong webcam
@@ -49,7 +66,13 @@ class TemplateMaker:
 
 		self.lastDieValue = None
 		self.lastDieType = None
+
+		if __name__ == '__main__':
+			self.main()
+			cv2.waitKey()
 		
+	def help(self):
+		print("Help Message")
 
 	def main(self):
 		self.name_entry_funct()
@@ -301,8 +324,6 @@ class TemplateMaker:
 		self.button_20 = tk.Button(width = 5, height = 2, text = 20, command = lambda: self.on_press(20))
 		self.button_20.grid(row = 3, column = 9)		
 
-
-
 	def display(self):
 		print("Template Maker loading... \n \n Place die square, centered and oriented upright. Follow prompts \n")
 		frame = 0
@@ -331,7 +352,5 @@ class TemplateMaker:
 		self.capture.release()
 		cv2.destroyAllWindows()
 
-feed = TemplateMaker()
-feed.main()
-cv2.waitKey()
-
+if __name__ == '__main__':
+	TM()
